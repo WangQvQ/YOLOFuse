@@ -16,7 +16,7 @@
 ---
 
 
-## 🧩 模态输入说明
+## 🧩 模态推理说明
 
 请将 RGB 和 IR 图像分别命名一致，并存放于不同目录下，例如：
 
@@ -55,8 +55,10 @@ python train_dual.py \
 ```bash
 python infer_dual.py \
   --weights path/to/your/best.pt \
+  --data your_dualmodal_data.yaml \
   --imgsz 640 \
-  --conf 0.25
+  --conf 0.25 \
+  --ch 6
 ```
 
 ---
