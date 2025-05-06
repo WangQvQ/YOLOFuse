@@ -34,6 +34,8 @@ assets/LLVIP/imagesIR/190003.jpg
 ### 1️⃣ 安装依赖
 
 ```bash
+git clone https://github.com/WangQvQ/YOLOFuse.git
+cd YOLOFuse
 pip install -e .
 ```
 
@@ -51,7 +53,7 @@ python train_dual.py \
 ### 3️⃣ 推理示例
 
 ```bash
-python scripts/infer_dual.py \
+python infer_dual.py \
   --weights path/to/your/best.pt \
   --imgsz 640 \
   --conf 0.25
