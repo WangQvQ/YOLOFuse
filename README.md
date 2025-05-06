@@ -1,6 +1,10 @@
 
 
-# YOLOFuse
+# YOLOFuse （RGB + 红外 IR）
+
+<p align="center">
+  <img src="examples/Images/rgbir.png" alt="alt text" />
+</p>
 
 **YOLOFuse** 是在 [Ultralytics YOLO](https://github.com/ultralytics/ultralytics) 框架基础上进行的改进版本，专为多模态目标检测任务设计。该版本新增了对双模态图像输入（RGB + 红外 IR）的支持，在复杂环境下提升检测鲁棒性和准确率，适用于夜间监控、安全巡检、灾难救援等应用场景。
 
@@ -86,7 +90,9 @@ datasets
 
 ## AudoDL 镜像 (开箱即用)
 
-![alt text](examples/Images/autodl.png)
+<p align="center">
+  <img src="examples/Images/autodl.png" alt="alt text" />
+</p>
 
 ```bash
 conda activate Ultralytics-RGB-IR
