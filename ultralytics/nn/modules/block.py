@@ -1192,10 +1192,10 @@ try:
         USE_FLASH_ATTN = True
     else:
         from torch.nn.functional import scaled_dot_product_attention as sdpa
-        logger.warning("FlashAttention is not available on this device. Using scaled_dot_product_attention instead.")
+        # logger.warning("FlashAttention is not available on this device. Using scaled_dot_product_attention instead.")
 except Exception:
     from torch.nn.functional import scaled_dot_product_attention as sdpa
-    logger.warning("FlashAttention is not available on this device. Using scaled_dot_product_attention instead.")
+    # logger.warning("FlashAttention is not available on this device. Using scaled_dot_product_attention instead.")
 
 class AAttn(nn.Module):
     """
