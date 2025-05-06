@@ -86,6 +86,8 @@ datasets
 
 ## AudoDL 镜像 (开箱即用)
 
+![alt text](examples/Images/autodl.png)
+
 ```bash
 conda activate Ultralytics-RGB-IR
 cd YOLOFuse
