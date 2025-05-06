@@ -1,0 +1,16 @@
+path: LLVIP                # 数据集根目录
+train: images/train        # RGB 训练图
+val:   images/test         # RGB 验证图
+test:                      # (可选) RGB 测试图
+names:
+  0: person
+
+# LLVIP/
+# ├── images/
+# │   ├── train/xxx.jpg
+# │   ├── val/xxx.jpg
+# │   └── test/xxx.jpg
+# └── imagesIR/                 # 只需和 images 同级、同层次、同文件名
+#     ├── train/xxx.jpg
+#     ├── val/xxx.jpg
+#     └── test/xxx.jpg
