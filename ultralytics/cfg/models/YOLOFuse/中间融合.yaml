@@ -12,9 +12,9 @@ scales: # model compound scaling constants, i.e. 'model=yolov8n.yaml' will call 
 # YOLO-Fuse backbone
 backbone:
   # [from, repeats, module, args]
-  - [-1, 1, IN, []] # 0
-  - [-1, 1, Multiin, [1]] # 1
-  - [-2, 1, Multiin, [2]] # 2
+  - [-1, 1, IdentityInput, []] # 0
+  - [-1, 1, ModalitySelector, [1]] # 1
+  - [-2, 1, ModalitySelector, [2]] # 2
 
   - [-2, 1, Conv, [32, 3, 2]] # 3-P1/2
   - [-2, 1, Conv, [32, 3, 2]]

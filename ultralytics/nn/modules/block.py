@@ -50,8 +50,8 @@ __all__ = (
     "PSA",
     "SCDown",
     "TorchVision",
-    "IN",
-    "Multiin",
+    "IdentityInput",
+    "ModalitySelector",
     "A2C2f"
 )
 
@@ -1159,7 +1159,11 @@ class TorchVision(nn.Module):
         return y
 
 
-class IN(nn.Module):
+class IdentityInput(nn.Module):
+    """
+    IdentityInput 模块：直接返回输入，不做任何处理。
+    常用于默认路径或跳过处理的场景。
+    """
     def __init__(self):
         super().__init__()
 
@@ -1167,18 +1171,35 @@ class IN(nn.Module):
         return x
 
 
-class Multiin(nn.Module):
+class ModalitySelector(nn.Module):
+    """
+    ModalitySelector 模块：用于从双模态输入（例如 RGB+IR 图像）中选择其中一个模态通道作为输出。
+    
+    输入格式要求：
+    - 输入张量 x 的形状为 (B, C, H, W)，其中 C 通道数为 6（假设 RGB+IR 各 3 通道）
+    - 默认 x[:, :3, :, :] 是 RGB，x[:, 3:, :, :] 是 IR
+
+    参数：
+    - out (int): 指定输出哪种模态图像
+        - 1 表示输出 RGB（默认值）
+        - 2 表示输出 IR
+    """
     def __init__(self, out=1):
         super().__init__()
-        self.out = out
+        self.out = out  # 控制输出哪个模态通道
 
     def forward(self, x):
-        x1, x2 = x[:, :3, :, :], x[:, 3:, :, :]
+        # 将输入张量在通道维拆分为两个子张量
+        # x1 是 RGB 图像部分，取前3个通道
+        x1, x2 = x[:, :3, :, :], x[:, 3:, :, :]  # x1: RGB, x2: IR
+
+        # 根据设置的 self.out 选择输出哪个模态图像
         if self.out == 1:
-            x = x1
+            x = x1  # 输出 RGB 图像
         else:
-            x = x2
-        return x
+            x = x2  # 输出 IR 图像
+
+        return x  # 返回选择的单一模态图像
 
 
 import logging

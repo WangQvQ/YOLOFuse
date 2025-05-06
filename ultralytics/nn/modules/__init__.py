@@ -26,7 +26,7 @@ from .block import (
     CIB,
     DFL,
     ELAN1,
-    IN,
+    IdentityInput,
     PSA,
     SPP,
     SPPELAN,
@@ -51,7 +51,7 @@ from .block import (
     HGBlock,
     HGStem,
     ImagePoolingAttn,
-    Multiin,
+    ModalitySelector,
     Proto,
     RepC3,
     RepNCSPELAN4,
@@ -163,7 +163,7 @@ __all__ = (
     "PSA",
     "TorchVision",
     "Index",
-    "IN",
-    "Multiin",
+    "IdentityInput",
+    "ModalitySelector",
     "A2C2f"
 )

@@ -12,9 +12,9 @@ scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call 
 # YOLO11n backbone
 backbone:
   # [from, repeats, module, args]
-  - [-1, 1, IN, []] # 0
-  - [-1, 1, Multiin, [1]] # 1
-  - [-2, 1, Multiin, [2]] # 2
+  - [-1, 1, IdentityInput, []] # 0
+  - [-1, 1, ModalitySelector, [1]] # 1
+  - [-2, 1, ModalitySelector, [2]] # 2
 
   # double stream backbone
   # Visible branch

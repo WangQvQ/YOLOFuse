@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 
 if __name__ == "__main__":
-    model = YOLO("ultralytics/cfg/models/YOLOFuse/后端融合.yaml")
+    model = YOLO("/root/YOLOFuse/ultralytics/cfg/models/YOLOFuse/前端融合.yaml")
     model.train(
         data="ultralytics/cfg/datasets/LLVIP.yaml",
         ch=6, # 多模态时设置为 6 ，单模态时设置为 3
@@ -18,5 +18,5 @@ if __name__ == "__main__":
         project="runs/train",
         name="RGB-IR",
         resume=False,
-        fraction=0.01, # 只用全部数据的 ？% 进行训练 (0.1-1)
+        fraction=1, # 只用全部数据的 ？% 进行训练 (0.1-1)
     )

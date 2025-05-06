@@ -19,7 +19,7 @@ from ultralytics.nn.modules import (
     C3,
     C3TR,
     ELAN1,
-    IN,
+    IdentityInput,
     OBB,
     PSA,
     SPP,
@@ -53,7 +53,7 @@ from ultralytics.nn.modules import (
     HGStem,
     ImagePoolingAttn,
     Index,
-    Multiin,
+    ModalitySelector,
     Pose,
     RepC3,
     RepConv,
@@ -1042,9 +1042,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 if scale in "lx":  # for L/X sizes
                     args.append(True)
                     args.append(1.5)
-        elif m is IN:
+        elif m is IdentityInput:
             ch[f] = ch[f]
-        elif m is Multiin:
+        elif m is ModalitySelector:
             c1 = ch[f]
             c2 = ch[f] // 2
         elif m is AIFI:
