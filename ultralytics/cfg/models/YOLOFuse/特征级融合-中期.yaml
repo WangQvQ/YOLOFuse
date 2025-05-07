@@ -9,18 +9,18 @@ scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call 
   l: [1.00, 1.00, 512]
   x: [1.00, 1.50, 512]
 
-# YOLO11n backbone
 backbone:
   # [from, repeats, module, args]
   - [-1, 1, IdentityInput, []] # 0
   - [-1, 1, ModalitySelector, [1]] # 1 RGB
   - [-2, 1, ModalitySelector, [2]] # 2 IR
 
-  # double stream backbone
+  # YOLO-Fuse backbone
   # Visible branch
   - [1, 1, Conv, [32, 3, 2]] # 3-P1/2
   - [-1, 1, Conv, [64, 3, 2]] # 4-P2/4
   - [-1, 2, C3k2, [128, False, 0.25]]
+
   # Infrared branch
   - [2, 1, Conv, [32, 3, 2]] # 6-P1/2
   - [-1, 1, Conv, [64, 3, 2]] # 7-P2/4
@@ -50,7 +50,7 @@ backbone:
   - [[15, 17], 1, Concat, [1]] # 26
   - [[21, 24], 1, Concat, [1]] # 27
 
-# YOLO11n head
+# YOLO-Fuse head
 head:
   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
   - [[-1, 26], 1, Concat, [1]] # cat backbone P4
