@@ -46,12 +46,7 @@ pip install -e .
 ### 2️⃣ 训练模型
 
 ```bash
-python train_dual.py \
-  --data your_dualmodal_data.yaml \
-  --imgsz 640 \
-  --epochs 100 \
-  --weights yolov8n.pt \
-  --ch 6
+python train_dual.py
 ```
 
 ### 3️⃣ 推理示例
@@ -61,12 +56,7 @@ python train_dual.py \
 
 
 ```bash
-python infer_dual.py \
-  --weights path/to/your/best.pt \
-  --data your_dualmodal_data.yaml \
-  --imgsz 640 \
-  --conf 0.25 \
-  --ch 6
+python infer_dual.py
 ```
 
 ---
@@ -81,7 +71,7 @@ datasets
 ├── images
 │   ├── test
 │   └── train
-├── imagesIR     # 只需和 images 同级、同层次、同文件名
+├── imagesIR     # 只需和 images 同级、同层次、命名为 imagesIR
 │   ├── test
 │   └── train
 └── labels
@@ -94,8 +84,11 @@ datasets
 
 ## AudoDL 镜像 (开箱即用)
 
+> https://www.codewithgpu.com/i/WangQvQ/YOLOFuse/YOLOFuse
+
 <p align="center">
   <img src="examples/Images/autodl.png" alt="alt text" />
+  <img src="examples/Images/dutodlcreate.png" alt="alt text" />
 </p>
 
 ```bash
