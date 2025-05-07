@@ -52,7 +52,8 @@ __all__ = (
     "TorchVision",
     "IdentityInput",
     "ModalitySelector",
-    "A2C2f"
+    "A2C2f",
+    "ModalConcat"
 )
 
 
@@ -1159,49 +1160,6 @@ class TorchVision(nn.Module):
         return y
 
 
-class IdentityInput(nn.Module):
-    """
-    IdentityInput 模块：直接返回输入，不做任何处理。
-    常用于默认路径或跳过处理的场景。
-    """
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        return x
-
-
-class ModalitySelector(nn.Module):
-    """
-    ModalitySelector 模块：用于从双模态输入（例如 RGB+IR 图像）中选择其中一个模态通道作为输出。
-    
-    输入格式要求：
-    - 输入张量 x 的形状为 (B, C, H, W)，其中 C 通道数为 6（假设 RGB+IR 各 3 通道）
-    - 默认 x[:, :3, :, :] 是 RGB，x[:, 3:, :, :] 是 IR
-
-    参数：
-    - out (int): 指定输出哪种模态图像
-        - 1 表示输出 RGB（默认值）
-        - 2 表示输出 IR
-    """
-    def __init__(self, out=1):
-        super().__init__()
-        self.out = out  # 控制输出哪个模态通道
-
-    def forward(self, x):
-        # 将输入张量在通道维拆分为两个子张量
-        # x1 是 RGB 图像部分，取前3个通道
-        x1, x2 = x[:, :3, :, :], x[:, 3:, :, :]  # x1: RGB, x2: IR
-
-        # 根据设置的 self.out 选择输出哪个模态图像
-        if self.out == 1:
-            x = x1  # 输出 RGB 图像
-        else:
-            x = x2  # 输出 IR 图像
-
-        return x  # 返回选择的单一模态图像
-
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1412,3 +1370,81 @@ class A2C2f(nn.Module):
         if self.gamma is not None:
             return x + self.gamma.view(1, -1, 1, 1) * self.cv2(torch.cat(y, 1))
         return self.cv2(torch.cat(y, 1))
+
+
+class ModalConcat(nn.Module):
+    """
+    简单的模态拼接模块：将两个模态（如 RGB 和 IR）图像沿通道维度拼接成一个多通道特征图。
+    
+    输入：
+        - x: Tensor 或 List[Tensor]，形状为 (B, 6, H, W)，假设前3通道为RGB，后3通道为IR。
+        
+    输出：
+        - Tensor，形状为 (B, 6, H, W)，将RGB和IR拼接后的结果。
+    """
+    def __init__(self, dimension=1):
+        super(ModalConcat, self).__init__()
+        self.d = dimension
+
+    def forward(self, x):
+        # 如果输入是 list 或 tuple，取第一个元素（适配 YOLO 的结构传递方式）
+        if isinstance(x, (list, tuple)):
+            x = x[0]
+        
+        # 打印输入维度
+        # print(f"[ModalConcat] 输入形状: {x.shape}")
+
+        # 拆分 RGB 和 IR 模态（各占 3 个通道）
+        x_rgb = x[:, :3, :, :]  # 前3通道为 RGB
+        x_ir = x[:, 3:, :, :]   # 后3通道为 IR
+
+        # 通道拼接
+        x_concat = torch.cat([x_rgb, x_ir], dim=self.d)
+
+        # 打印输出维度
+        # print(f"[ModalConcat] 输出形状: {x_concat.shape}")
+
+        return x_concat
+
+
+class IdentityInput(nn.Module):
+    """
+    IdentityInput 模块：直接返回输入，不做任何处理。
+    常用于默认路径或跳过处理的场景。
+    """
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return x
+
+
+class ModalitySelector(nn.Module):
+    """
+    ModalitySelector 模块：用于从双模态输入（例如 RGB+IR 图像）中选择其中一个模态通道作为输出。
+    
+    输入格式要求：
+    - 输入张量 x 的形状为 (B, C, H, W)，其中 C 通道数为 6（假设 RGB+IR 各 3 通道）
+    - 默认 x[:, :3, :, :] 是 RGB，x[:, 3:, :, :] 是 IR
+
+    参数：
+    - out (int): 指定输出哪种模态图像
+        - 1 表示输出 RGB（默认值）
+        - 2 表示输出 IR
+    """
+    def __init__(self, out=1):
+        super().__init__()
+        self.out = out  # 控制输出哪个模态通道
+
+    def forward(self, x):
+        # 将输入张量在通道维拆分为两个子张量
+        # x1 是 RGB 图像部分，取前3个通道
+        x1, x2 = x[:, :3, :, :], x[:, 3:, :, :]  # x1: RGB, x2: IR
+
+        # 根据设置的 self.out 选择输出哪个模态图像
+        if self.out == 1:
+            x = x1  # 输出 RGB 图像
+        else:
+            x = x2  # 输出 IR 图像
+
+        return x  # 返回选择的单一模态图像

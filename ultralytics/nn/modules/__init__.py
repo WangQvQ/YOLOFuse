@@ -59,7 +59,8 @@ from .block import (
     ResNetLayer,
     SCDown,
     TorchVision,
-    A2C2f
+    A2C2f,
+    ModalConcat
 )
 from .conv import (
     CBAM,
@@ -165,5 +166,6 @@ __all__ = (
     "Index",
     "IdentityInput",
     "ModalitySelector",
-    "A2C2f"
+    "A2C2f",
+    "ModalConcat"
 )
