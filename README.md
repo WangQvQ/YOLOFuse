@@ -56,6 +56,10 @@ python train_dual.py \
 
 ### 3️⃣ 推理示例
 
+> 已训练好的权重文件，夸克网盘地址：
+> 链接：https://pan.quark.cn/s/5e8f1c94ae5d
+
+
 ```bash
 python infer_dual.py \
   --weights path/to/your/best.pt \
