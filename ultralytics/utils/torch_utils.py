@@ -376,13 +376,19 @@ def get_flops(model, imgsz=640):
             # im = torch.empty((1, p.shape[1], stride, stride), device=p.device)  # input image in BCHW format
             im = torch.empty((1, hyp.ch, stride, stride), device=p.device)  # Fix RGB+IR Flops calculation
             flops = thop.profile(deepcopy(model), inputs=[im], verbose=False)[0] / 1e9 * 2  # stride GFLOPs
-            return flops * imgsz[0] / stride * imgsz[1] / stride  # imgsz GFLOPs
+            flops = flops * imgsz[0] / stride * imgsz[1] / stride  # imgsz GFLOPs
+            if not flops:  # fallback to torch profiler
+                flops = get_flops_with_torch_profiler(model, imgsz)
+            return flops
         except Exception:
             # Use actual image size for input tensor (i.e. required for RTDETR models)
             im = torch.empty((1, p.shape[1], *imgsz), device=p.device)  # input image in BCHW format
-            return thop.profile(deepcopy(model), inputs=[im], verbose=False)[0] / 1e9 * 2  # imgsz GFLOPs
+            flops = thop.profile(deepcopy(model), inputs=[im], verbose=False)[0] / 1e9 * 2  # imgsz GFLOPs
+            if not flops:
+                flops = get_flops_with_torch_profiler(model, imgsz)
+            return flops # imgsz GFLOPs
     except Exception:
-        return 0.0
+        return get_flops_with_torch_profiler(model, imgsz) if TORCH_2_0 else 0.0
 
 
 def get_flops_with_torch_profiler(model, imgsz=640):
@@ -391,19 +397,20 @@ def get_flops_with_torch_profiler(model, imgsz=640):
         return 0.0
     model = de_parallel(model)
     p = next(model.parameters())
+    hyp = DEFAULT_CFG
     if not isinstance(imgsz, list):
         imgsz = [imgsz, imgsz]  # expand if int/float
     try:
         # Use stride size for input tensor
         stride = (max(int(model.stride.max()), 32) if hasattr(model, "stride") else 32) * 2  # max stride
-        im = torch.empty((1, p.shape[1], stride, stride), device=p.device)  # input image in BCHW format
+        im = torch.empty((1, hyp.ch, stride, stride), device=p.device)  # input image in BCHW format
         with torch.profiler.profile(with_flops=True) as prof:
             model(im)
         flops = sum(x.flops for x in prof.key_averages()) / 1e9
         flops = flops * imgsz[0] / stride * imgsz[1] / stride  # 640x640 GFLOPs
     except Exception:
         # Use actual image size for input tensor (i.e. required for RTDETR models)
-        im = torch.empty((1, p.shape[1], *imgsz), device=p.device)  # input image in BCHW format
+        im = torch.empty((1, hyp.ch, *imgsz), device=p.device)  # input image in BCHW format
         with torch.profiler.profile(with_flops=True) as prof:
             model(im)
         flops = sum(x.flops for x in prof.key_averages()) / 1e9
