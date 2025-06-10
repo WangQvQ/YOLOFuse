@@ -96,6 +96,15 @@ from ultralytics.utils.torch_utils import (
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
 
+    @staticmethod
+    def _split_modalities(x):
+        """If input is multi-modal tensor, split into a list of two tensors."""
+        if isinstance(x, torch.Tensor) and x.ndim == 4 and x.shape[1] > 3:
+            c = x.shape[1] // 2
+            return [x[:, :c, ...], x[:, c:, ...]]
+        return x
+
+
     def forward(self, x, *args, **kwargs):
         """
         Perform forward pass of the model for either training or inference.
@@ -145,6 +154,7 @@ class BaseModel(nn.Module):
         Returns:
             (torch.Tensor): The last output of the model.
         """
+        x = self._split_modalities(x)
         y, dt, embeddings = [], [], []  # outputs
         for m in self.model:
             if m.f != -1:  # if not from previous layer
@@ -292,7 +302,8 @@ class BaseModel(nn.Module):
         if getattr(self, "criterion", None) is None:
             self.criterion = self.init_criterion()
 
-        preds = self.forward(batch["img"]) if preds is None else preds
+        img = self._split_modalities(batch["img"])
+        preds = self.forward(img) if preds is None else preds
         return self.criterion(preds, batch)
 
     def init_criterion(self):
@@ -529,15 +540,21 @@ class RTDETRDetectionModel(DetectionModel):
         if not hasattr(self, "criterion"):
             self.criterion = self.init_criterion()
 
-        img = batch["img"]
+        img = self._split_modalities(batch["img"])
+        if isinstance(img, (list, tuple)):
+            bs = img[0].shape[0]
+            device = img[0].device
+        else:
+            bs = len(img)
+            device = img.device
         # NOTE: preprocess gt_bbox and gt_labels to list.
-        bs = len(img)
+
         batch_idx = batch["batch_idx"]
         gt_groups = [(batch_idx == i).sum().item() for i in range(bs)]
         targets = {
-            "cls": batch["cls"].to(img.device, dtype=torch.long).view(-1),
-            "bboxes": batch["bboxes"].to(device=img.device),
-            "batch_idx": batch_idx.to(img.device, dtype=torch.long).view(-1),
+            "cls": batch["cls"].to(device, dtype=torch.long).view(-1),
+            "bboxes": batch["bboxes"].to(device=device),
+            "batch_idx": batch_idx.to(device, dtype=torch.long).view(-1),
             "gt_groups": gt_groups,
         }
 
@@ -557,7 +574,7 @@ class RTDETRDetectionModel(DetectionModel):
         )
         # NOTE: There are like 12 losses in RTDETR, backward with all losses but only show the main three losses.
         return sum(loss.values()), torch.as_tensor(
-            [loss[k].detach() for k in ["loss_giou", "loss_class", "loss_bbox"]], device=img.device
+            [loss[k].detach() for k in ["loss_giou", "loss_class", "loss_bbox"]], device=device
         )
 
     def predict(self, x, profile=False, visualize=False, batch=None, augment=False, embed=None):
@@ -679,7 +696,8 @@ class WorldModel(DetectionModel):
             self.criterion = self.init_criterion()
 
         if preds is None:
-            preds = self.forward(batch["img"], txt_feats=batch["txt_feats"])
+            img = self._split_modalities(batch["img"])
+            preds = self.forward(img, txt_feats=batch["txt_feats"])
         return self.criterion(preds, batch)
 
 
@@ -1059,7 +1077,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 n = 1
         elif m is ResNetLayer:
             c2 = args[1] if args[3] else args[1] * 4
-        elif m in frozenset({CGAFusion}):
+        elif m is CGAFusion:
             c2 = sum([ch[x] for x in f])//2
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
