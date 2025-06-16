@@ -13,8 +13,8 @@ scales: # model compound scaling constants, i.e. 'model=yolov8n.yaml' will call 
 backbone:
   # [from, repeats, module, args]
   - [-1, 1, IdentityInput, []] # 0
-  - [-1, 1, ModalitySelector, [1]] # 1
-  - [-2, 1, ModalitySelector, [2]] # 2
+  - [-1, 1, ModalitySelector, [1]] # 1 RGB
+  - [-2, 1, ModalitySelector, [2]] # 2 IR
 
   - [-2, 1, Conv, [32, 3, 2]] # 3-P1/2
   - [-2, 1, Conv, [32, 3, 2]]
