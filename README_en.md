@@ -1,3 +1,4 @@
+<p align="center"><a href="README.md">中文</a></p>
 
 # YOLOFuse: A Dual-Stream Fusion Framework for Multimodal Object Detection
 
