@@ -98,7 +98,9 @@ python train_dual.py  # 启动双流训练
 python infer_dual.py  # 执行融合推理
 ```
 
-> 预训练权重下载：[夸克网盘](https://pan.quark.cn/s/5e8f1c94ae5d)
+> 预训练权重下载：
+> 链接：[https://pan.quark.cn/s/ec13c6e17b8d]([https://](https://pan.quark.cn/s/ec13c6e17b8d))
+> 提取码：HETx
 
 ---
 
