@@ -1,3 +1,5 @@
+<p align="center"><a href="README_en.md">English</a></p>
+
 # YOLOFuse：面向多模态目标检测的双流融合框架
 
 <p align="center">
