@@ -43,11 +43,12 @@
 
 ## 📊 LLVIP Benchmark Results
 
-| Model Architecture     | Modality | Precision (P) | Recall (R) | mAP50 | mAP50-95 | Model Size (MB) | GFLOPs |
-| ---------------------- | -------- | ------------- | ---------- | ----- | -------- | --------------- | ------ |
-| yolov8n (baseline)     | RGB      | 0.888         | 0.829      | 0.891 | 0.500    | 6.2             | 8.1    |
-| yolo-fuse-mid-fusion   | RGB+IR   | 0.951         | 0.881      | 0.947 | 0.601    | 2.61            | 3.2    |
-| yolo-fuse-early-fusion | RGB+IR   | 0.950         | 0.896      | 0.955 | 0.623    | 5.2             | 6.7    |
+| Model Architecture             | Modality | Precision (P) | Recall (R) | mAP50 | mAP50-95 | Model Size (MB) | GFLOPs |
+| ------------------------------ | -------- | ------------- | ---------- | ----- | -------- | --------------- | ------ |
+| yolov8n (baseline)             | RGB      | 0.888         | 0.829      | 0.891 | 0.500    | 6.2             | 8.1    |
+| yolo-fuse-mid-fusion           | RGB+IR   | 0.951         | 0.881      | 0.947 | 0.601    | 2.61            | 3.2    |
+| yolo-fuse-early-fusion         | RGB+IR   | 0.950         | 0.896      | 0.955 | 0.623    | 5.2             | 6.7    |
+| yolo-fuse-decision-level fusion| RGB+IR   | 0.956         | 0.905      | 0.955 | 0.612    | 8.8             | 10.7   |
 
 ---
 
