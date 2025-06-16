@@ -1,5 +1,25 @@
 <p align="center"><a href="README_en.md">English</a></p>
 
+
+<p align="center">
+  <a href="https://github.com/WangQvQ/YOLOFuse">
+    <img src="https://img.shields.io/github/stars/WangQvQ/YOLOFuse?style=social" alt="GitHub stars">
+  </a>
+  <a href="https://github.com/WangQvQ/YOLOFuse">
+    <img src="https://img.shields.io/github/forks/WangQvQ/YOLOFuse?style=social" alt="GitHub forks">
+  </a>
+  <a href="https://github.com/WangQvQ/YOLOFuse/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/WangQvQ/YOLOFuse" alt="License">
+  </a>
+  <a href="https://github.com/WangQvQ/YOLOFuse">
+    <img src="https://img.shields.io/badge/YOLO-Multimodal%20Fusion-blueviolet?logo=ai" alt="Multimodal YOLO">
+  </a>
+  <a href="https://www.codewithgpu.com/i/WangQvQ/YOLOFuse/YOLOFuse">
+    <img src="https://img.shields.io/badge/AutoDL-ready-brightgreen?logo=cloudflare" alt="AutoDL Ready">
+  </a>
+</p>
+
+
 # YOLOFuse：面向多模态目标检测的双流融合框架
 
 <p align="center">
