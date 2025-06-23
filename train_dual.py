@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 
 if __name__ == "__main__":
-    model = YOLO("ultralytics/cfg/models/YOLOFuse/特征级融合-中期.yaml")
+    model = YOLO("ultralytics/cfg/models/fuse/特征级融合-中期.yaml")
     model.train(
         data="ultralytics/cfg/datasets/LLVIP.yaml",
         ch=6, # 多模态时设置为 6 ，单模态时设置为 3
