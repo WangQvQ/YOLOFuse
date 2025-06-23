@@ -14,7 +14,7 @@ if __name__ == "__main__":
         optimizer="SGD",
         patience=0,
         amp=False,
-        cache=True,
+        cache=True, # disk 硬盘，速度稍快精度可复现；ram/True 内存，速度快但精度不可复现
         project="runs/train",
         name="RGB-IR-特征级融合-中期",
         resume=False,
