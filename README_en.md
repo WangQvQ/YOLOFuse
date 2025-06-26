@@ -144,4 +144,3 @@ python infer_dual.py
 
 <p align="right"><a href="#yolofuse-a-dual-stream-fusion-framework-for-multimodal-object-detection">Back to Top ⬆️</a></p>
 
-Let me know if you'd like this exported as a `.md` file for GitHub directly.
