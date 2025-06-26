@@ -1,0 +1,63 @@
+# Parameters
+nc: 80 # number of classes
+ch: 6
+scales: # model compound scaling constants
+  # [depth, width, max_channels]
+  n: [0.33, 0.25, 1024]
+  s: [0.33, 0.50, 1024]
+  m: [0.67, 0.75, 768]
+  l: [1.00, 1.00, 512]
+  x: [1.00, 1.25, 512]
+
+# DEYOLO backbone
+backbone:
+  - [-1, 1, IdentityInput, []] # 0
+  - [-1, 1, ModalitySelector, [1]] # 1 RGB
+  - [-2, 1, ModalitySelector, [2]] # 2 IR
+
+  # [from, repeats, module, args]
+  - [1, 1, Conv, [64, 3, 2]] # 3-P1/2
+  - [-1, 1, Conv, [128, 3, 2]] # 4-P2/4
+  - [-1, 3, C2f_BiFocus, [128, True]]
+  - [-1, 1, Conv, [256, 3, 2]] # 6-P3/8
+  - [-1, 6, C2f, [256, True]]
+  - [-1, 1, Conv, [512, 3, 2]] # 8-P4/16
+  - [-1, 6, C2f, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]] # 10-P5/32
+  - [-1, 3, C2f, [1024, True]]
+  - [-1, 1, SPPF, [1024, 5]] # 12
+
+  - [2, 1, Conv, [64, 3, 2]] # 13-P1/2
+  - [-1, 1, Conv, [128, 3, 2]] # 14-P2/4
+  - [-1, 3, C2f_BiFocus, [128, True]]
+  - [-1, 1, Conv, [256, 3, 2]] # 16-P3/8
+  - [-1, 6, C2f, [256, True]]
+  - [-1, 1, Conv, [512, 3, 2]] # 18-P4/16
+  - [-1, 6, C2f, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]] # 20-P5/32
+  - [-1, 3, C2f, [1024, True]]
+  - [-1, 1, SPPF, [1024, 5]] # 22
+
+# DEYOLO head
+head:
+  - [[7, 17], 1, DEA, [256, 80]] # 23
+  - [[9, 19], 1, DEA, [512, 40]] # 24
+  - [[12, 22], 1, DEA, [1024, 20]] # 25
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 24], 1, Concat, [1]] # cat backbone P4
+  - [-1, 3, C2f, [512]] # 28
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 23], 1, Concat, [1]] # cat backbone P3
+  - [-1, 3, C2f, [256]] # 31 (P3/8-small)
+
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 28], 1, Concat, [1]] # cat head P4
+  - [-1, 3, C2f, [512]] # 34 (P4/16-medium)
+
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 25], 1, Concat, [1]] # cat head P5
+  - [-1, 3, C2f, [1024]] # 37 (P5/32-large)
+
+  - [[31, 34, 37], 1, Detect, [nc]] # Detect(P3, P4, P5)
