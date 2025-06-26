@@ -37,8 +37,10 @@
 * 🔍 **可扩展融合模块**：提供多层次融合策略，支持：
   - ✅ 数据级融合（Data-level Fusion）
   - ✅ 决策级融合（Decision-level Fusion）
-  - ✅ 早期特征融合（Early Feature Fusion）
+  - ✅ 早期特征融合（Early-level Feature Fusion）
   - ✅ 中期特征融合（Mid-level Feature Fusion）
+  - ✅ 极简融合（Easy-level Feature Fusion）
+  - ✅ DEYOLO（[arxiv](https://arxiv.org/abs/2412.04931)）
 
 ---
 

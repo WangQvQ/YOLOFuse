@@ -36,8 +36,11 @@
 
   * ✅ Data-level Fusion
   * ✅ Decision-level Fusion
-  * ✅ Early Feature Fusion
+  * ✅ Early-level Feature Fusion
   * ✅ Mid-level Feature Fusion
+  * ✅ Easy-level Feature Fusion
+  * ✅ DEYOLO（[arxiv](https://arxiv.org/abs/2412.04931)）
+
 
 ---
 
@@ -49,7 +52,8 @@
 | yolo-fuse-mid-fusion           | RGB+IR   | 0.951         | 0.881      | 0.947 | 0.601    | 2.61            | 3.2    |
 | yolo-fuse-early-fusion         | RGB+IR   | 0.950         | 0.896      | 0.955 | 0.623    | 5.2             | 6.7    |
 | yolo-fuse-decision-level fusion| RGB+IR   | 0.956         | 0.905      | 0.955 | 0.612    | 8.8             | 10.7   |
-
+| YOLO-fuse-easy-fusion     | RGB+IR | 0.899  | 0.865   | 0.939   | 0.620      | 7.83      | 8.5          |
+| DEYOLO             | RGB+IR | 0.943  | 0.895   | 0.952   | 0.615      | 11.85     | 16.6         |
 ---
 
 ## 🧩 Input Format Specification
