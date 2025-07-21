@@ -72,6 +72,7 @@ from ultralytics.nn.modules import (
 from ultralytics.nn.modules.layers.CGAFusion import CGAFusion
 from ultralytics.nn.modules.layers.BiFocus import C2f_BiFocus
 from ultralytics.nn.modules.layers.DEA import DEA
+from ultralytics.nn.modules.layers.DEFA import DEFA
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
 from ultralytics.utils.loss import (
@@ -1083,6 +1084,11 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = sum([ch[x] for x in f])//2
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
+        elif m is DEFA:
+            c1, c2 = ch[f[0]], args[0]
+            if c2 != nc:
+                c2 = make_divisible(min(c2, max_channels) * width, 8)
+            args = [c1, *args[1:]]
         elif m in frozenset({Concat, ModalConcat}):
             c2 = sum(ch[x] for x in f)
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
