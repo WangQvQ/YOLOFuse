@@ -1,7 +1,8 @@
 from ultralytics import YOLO
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Load a model
-    model = YOLO('ultralytics/cfg/models/fuse/后期融合.yaml')  # build a new model from YAML
-    model.info()
+    cfg_path = 'ultralytics/cfg/models/fuse/Easy-level-Feature-Fusion.yaml'
+    model = YOLO(cfg_path)
+    model._new(cfg_path, task='detect', verbose=True)
 
