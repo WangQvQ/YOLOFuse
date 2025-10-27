@@ -60,7 +60,11 @@ from .block import (
     SCDown,
     TorchVision,
     A2C2f,
-    ModalConcat
+    ModalConcat,
+    DSC3k2,
+    DownsampleConv,
+    HyperACE,
+    FullPAD_Tunnel,
 )
 from .conv import (
     CBAM,
@@ -77,6 +81,7 @@ from .conv import (
     LightConv,
     RepConv,
     SpatialAttention,
+    DSConv
 )
 from .head import OBB, Classify, Detect, Pose, RTDETRDecoder, Segment, WorldDetect, v10Detect
 from .transformer import (
@@ -167,5 +172,10 @@ __all__ = (
     "IdentityInput",
     "ModalitySelector",
     "A2C2f",
-    "ModalConcat"
+    "ModalConcat",
+    "DSC3k2",
+    "DownsampleConv",
+    "HyperACE",
+    "FullPAD_Tunnel",
+    "DSConv"
 )

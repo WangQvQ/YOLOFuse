@@ -67,7 +67,12 @@ from ultralytics.nn.modules import (
     WorldDetect,
     v10Detect,
     A2C2f,
-    ModalConcat
+    ModalConcat,
+    DSC3k2,
+    DownsampleConv,
+    HyperACE,
+    FullPAD_Tunnel,
+    DSConv,
 )
 from ultralytics.nn.modules.layers.CGAFusion import CGAFusion
 from ultralytics.nn.modules.layers.BiFocus import C2f_BiFocus
@@ -1009,7 +1014,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             PSA,
             SCDown,
             C2fCIB,
-            A2C2f
+            A2C2f,
+            DSC3k2,
+            DSConv
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1028,7 +1035,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2fPSA,
             C2fCIB,
             C2PSA,
-            A2C2f
+            A2C2f,
+            DSC3k2
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
@@ -1059,6 +1067,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             if m is C3k2:  # for M/L/X sizes
                 legacy = False
                 if scale in "mlx":
+                    args[3] = True
+            if m in {DSC3k2}:  # for P/U sizes
+                legacy = False
+                if scale in "lx":
                     args[3] = True
             if m is A2C2f: 
                 legacy = False
@@ -1119,6 +1131,29 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = args[0]
             c1 = ch[f]
             args = [*args[1:]]
+        elif m is HyperACE:
+            legacy = False
+            c1 = ch[f[1]]
+            c2 = args[0]
+            c2 = make_divisible(min(c2, max_channels) * width, 8)
+            he = args[1] 
+            if scale in "n":
+                he = int(args[1] * 0.5)
+            elif scale in "x":
+                he = int(args[1] * 1.5)
+            args = [c1, c2, n, he, *args[2:]]
+            n = 1
+            if scale in "lx":  # for L/X sizes
+                args.append(False)
+        elif m is DownsampleConv:
+            c1 = ch[f]
+            c2 = c1 * 2
+            args = [c1]
+            if scale in "lx":  # for L/X sizes
+                args.append(False)
+                c2 =c1
+        elif m is FullPAD_Tunnel:
+            c2 = ch[f[0]]
         else:
             c2 = ch[f]
 

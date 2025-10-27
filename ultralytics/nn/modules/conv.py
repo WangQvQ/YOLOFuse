@@ -22,6 +22,7 @@ __all__ = (
     "Concat",
     "RepConv",
     "Index",
+    "DSConv",
 )
 
 
@@ -348,3 +349,23 @@ class Index(nn.Module):
         Expects a list of tensors as input.
         """
         return x[self.index]
+
+
+class DSConv(nn.Module):
+    """The Basic Depthwise Separable Convolution."""
+    def __init__(self, c_in, c_out, k=3, s=1, p=None, d=1, bias=False):
+        super().__init__()
+        if p is None:
+            p = (d * (k - 1)) // 2
+        self.dw = nn.Conv2d(
+            c_in, c_in, kernel_size=k, stride=s,
+            padding=p, dilation=d, groups=c_in, bias=bias
+        )
+        self.pw = nn.Conv2d(c_in, c_out, 1, 1, 0, bias=bias)
+        self.bn = nn.BatchNorm2d(c_out)
+        self.act = nn.SiLU()
+
+    def forward(self, x):
+        x = self.dw(x)
+        x = self.pw(x)
+        return self.act(self.bn(x))
