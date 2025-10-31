@@ -171,7 +171,7 @@ class BaseDataset(Dataset):
                     ir_im = cv2.imread(ir)
                     if ir_im is None:
                         raise FileNotFoundError(f"IR image not found: {ir}")
-                    im = cv2.merge((ir_im, im))    # IR + RGB → 4 通道
+                    im = cv2.merge((ir_im, im))    # IR + RGB 通道
 
             # ---------- ② 首次打印 ----------
             if not self._modality_logged:
