@@ -1,5 +1,8 @@
 <p align="center"><a href="README.md">中文</a></p>
 <p align="center">
+  <a href="https://github.com/WangQvQ/YOLOFuse/releases">
+    <img src="https://img.shields.io/badge/version-v1.0.0-blue" alt="Version">
+  </a>
   <a href="https://github.com/WangQvQ/YOLOFuse">
     <img src="https://img.shields.io/github/stars/WangQvQ/YOLOFuse?style=social" alt="GitHub stars">
   </a>
@@ -18,13 +21,30 @@
 </p>
 
 
-# YOLOFuse: A Dual-Stream Fusion Framework for Multimodal Object Detection
+# YOLOFuse v1.0.0: A Dual-Stream Fusion Framework for Multimodal Object Detection
 
 <p align="center">
   <img src="examples/Images/rgbir.png" alt="RGB-IR Multimodal Fusion Architecture" width="600"/>
 </p>
 
 **YOLOFuse** is an enhanced object detection system built upon the [Ultralytics YOLO](https://github.com/ultralytics/ultralytics) framework, designed specifically for multimodal perception tasks. The framework introduces a dual-stream processing architecture that enables the collaborative analysis and fusion of RGB and infrared (IR) images. This significantly improves detection robustness in challenging environments such as low light, smoke, or extreme weather. YOLOFuse is well-suited for applications like surveillance, disaster rescue, and industrial inspection.
+
+---
+
+## 📋 Changelog
+
+### v1.0.0 (2025-05-17)
+
+- Added DEFA (Dynamic Enhanced Fusion Attention) fusion strategy
+- Fixed IR path replacement to only match directory-level `images`
+- Fixed `cache="disk"` not working in dual-modality mode
+- Fixed training crash when IR image is missing (auto fallback to RGB)
+- Fixed RGB/IR image size mismatch handling (auto resize)
+- Fixed `ModalConcat` handling of nested list inputs
+- Fixed `get_flops` calculation error for dual-modality models
+- Reverted default `ch=3` for single-modality backward compatibility
+- Added `tests/test_fuse_models.py` test suite (31 test cases)
+- Added `einops` dependency declaration
 
 ---
 
@@ -39,7 +59,8 @@
   * ✅ Early-level Feature Fusion
   * ✅ Mid-level Feature Fusion
   * ✅ Easy-level Feature Fusion
-  * ✅ DEYOLO（[arxiv](https://arxiv.org/abs/2412.04931)）
+  * ✅ DEYOLO ([arxiv](https://arxiv.org/abs/2412.04931))
+  * ✅ DEFA (Dynamic Enhanced Fusion Attention)
 
 
 ---

@@ -2,6 +2,9 @@
 
 
 <p align="center">
+  <a href="https://github.com/WangQvQ/YOLOFuse/releases">
+    <img src="https://img.shields.io/badge/version-v1.0.0-blue" alt="Version">
+  </a>
   <a href="https://github.com/WangQvQ/YOLOFuse">
     <img src="https://img.shields.io/github/stars/WangQvQ/YOLOFuse?style=social" alt="GitHub stars">
   </a>
@@ -20,13 +23,30 @@
 </p>
 
 
-# YOLOFuse：面向多模态目标检测的双流融合框架
+# YOLOFuse v1.0.0：面向多模态目标检测的双流融合框架
 
 <p align="center">
   <img src="examples/Images/rgbir.png" alt="RGB-IR双模态融合架构示意图" width="600"/>
 </p>
 
 **YOLOFuse** 是基于 [Ultralytics YOLO](https://github.com/ultralytics/ultralytics) 框架构建的增强型目标检测系统，专为多模态感知任务设计。本框架创新性地引入双流处理架构，支持RGB与红外（IR）图像的协同分析与特征融合，显著提升复杂环境（低照度、烟雾遮挡、极端天气等）下的检测鲁棒性。适用于安防监控、灾害救援、工业巡检等关键场景。
+
+---
+
+## 📋 更新日志
+
+### v1.0.0 (2025-05-17)
+
+- 新增 DEFA（动态增强融合注意力）融合策略
+- 修复 IR 路径替换鲁莽问题（只替换目录级 `images`）
+- 修复 `cache="disk"` 双模态模式下失效的问题
+- 修复 IR 图像缺失时训练直接崩溃的问题（自动 fallback）
+- 修复 RGB/IR 图像尺寸不匹配时的处理（自动 resize）
+- 修复 `ModalConcat` 对嵌套输入的处理
+- 修复 `get_flops` 双模态模型计算错误
+- 恢复默认 `ch=3`，保持单模态向后兼容
+- 添加 `tests/test_fuse_models.py` 测试套件（31 个测试用例）
+- 添加 `einops` 依赖声明
 
 ---
 
@@ -41,6 +61,7 @@
   - ✅ 中期特征融合（Mid-level Feature Fusion）
   - ✅ 极简融合（Easy-level Feature Fusion）
   - ✅ DEYOLO（[arxiv](https://arxiv.org/abs/2412.04931)）
+  - ✅ DEFA（动态增强融合注意力）
 
 ---
 

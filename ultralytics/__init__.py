@@ -1,6 +1,7 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 __version__ = "8.3.74"
+__yolofuse_version__ = "1.0.0"
 
 import os
 
@@ -16,6 +17,7 @@ from ultralytics.utils.downloads import download
 settings = SETTINGS
 __all__ = (
     "__version__",
+    "__yolofuse_version__",
     "ASSETS",
     "YOLO",
     "YOLOWorld",

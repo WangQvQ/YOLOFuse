@@ -1584,24 +1584,19 @@ class ModalConcat(nn.Module):
         self.d = dimension
 
     def forward(self, x):
-        # 如果输入是 list 或 tuple，取第一个元素（适配 YOLO 的结构传递方式）
         if isinstance(x, (list, tuple)):
-            x = x[0]
-        
-        # 打印输入维度
-        # print(f"[ModalConcat] 输入形状: {x.shape}")
-
-        # 拆分 RGB 和 IR 模态（各占 3 个通道）
-        x_rgb = x[:, :3, :, :]  # 前3通道为 RGB
-        x_ir = x[:, 3:, :, :]   # 后3通道为 IR
-
-        # 通道拼接
-        x_concat = torch.cat([x_rgb, x_ir], dim=self.d)
-
-        # 打印输出维度
-        # print(f"[ModalConcat] 输出形状: {x_concat.shape}")
-
-        return x_concat
+            # 递归展平嵌套 list（f=[-1] 时 x 可能是 [[t1, t2]]）
+            flat = []
+            for item in x:
+                if isinstance(item, (list, tuple)):
+                    flat.extend(item)
+                else:
+                    flat.append(item)
+            return torch.cat(flat, dim=self.d)
+        # 单 tensor 输入：拆分后重新拼接（适配 _split_modalities 输出）
+        x_rgb = x[:, :3, :, :]
+        x_ir = x[:, 3:, :, :]
+        return torch.cat([x_rgb, x_ir], dim=self.d)
 
 
 class IdentityInput(nn.Module):

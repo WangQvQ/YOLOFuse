@@ -373,8 +373,9 @@ def get_flops(model, imgsz=640):
         try:
             # Use stride size for input tensor
             stride = max(int(model.stride.max()), 32) if hasattr(model, "stride") else 32  # max stride
-            # im = torch.empty((1, p.shape[1], stride, stride), device=p.device)  # input image in BCHW format
-            im = torch.empty((1, hyp.ch, stride, stride), device=p.device)  # Fix RGB+IR Flops calculation
+            # Use model's own ch if available, otherwise fall back to default
+            ch = getattr(model, "yaml", {}).get("ch", hyp.ch) if hasattr(model, "yaml") else hyp.ch
+            im = torch.empty((1, ch, stride, stride), device=p.device)  # input image in BCHW format
             flops = thop.profile(deepcopy(model), inputs=[im], verbose=False)[0] / 1e9 * 2  # stride GFLOPs
             flops = flops * imgsz[0] / stride * imgsz[1] / stride  # imgsz GFLOPs
             if not flops:  # fallback to torch profiler
@@ -403,7 +404,8 @@ def get_flops_with_torch_profiler(model, imgsz=640):
     try:
         # Use stride size for input tensor
         stride = (max(int(model.stride.max()), 32) if hasattr(model, "stride") else 32) * 2  # max stride
-        im = torch.empty((1, hyp.ch, stride, stride), device=p.device)  # input image in BCHW format
+        ch = getattr(model, "yaml", {}).get("ch", hyp.ch) if hasattr(model, "yaml") else hyp.ch
+        im = torch.empty((1, ch, stride, stride), device=p.device)  # input image in BCHW format
         with torch.profiler.profile(with_flops=True) as prof:
             model(im)
         flops = sum(x.flops for x in prof.key_averages()) / 1e9

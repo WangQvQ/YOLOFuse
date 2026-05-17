@@ -61,9 +61,9 @@ class FocusH(nn.Module):
 
     def forward(self, x):
         b, _, h, w = x.shape
-        result = torch.zeros(size=[b, self.c2, h, w], device=x.device, dtype=x.dtype)
-        x1 = torch.zeros(size=[b, self.c2, h, w // 2], device=x.device, dtype=x.dtype)
-        x2 = torch.zeros(size=[b, self.c2, h, w // 2], device=x.device, dtype=x.dtype)
+        result = torch.empty(b, self.c2, h, w, device=x.device, dtype=x.dtype)
+        x1 = torch.empty(b, self.c2, h, w // 2, device=x.device, dtype=x.dtype)
+        x2 = torch.empty(b, self.c2, h, w // 2, device=x.device, dtype=x.dtype)
 
         x1[..., ::2, :], x1[..., 1::2, :] = x[..., ::2, ::2], x[..., 1::2, 1::2]
         x2[..., ::2, :], x2[..., 1::2, :] = x[..., ::2, 1::2], x[..., 1::2, ::2]
@@ -89,9 +89,9 @@ class FocusV(nn.Module):
 
     def forward(self, x):
         b, _, h, w = x.shape
-        result = torch.zeros(size=[b, self.c2, h, w], device=x.device, dtype=x.dtype)
-        x1 = torch.zeros(size=[b, self.c2, h // 2, w], device=x.device, dtype=x.dtype)
-        x2 = torch.zeros(size=[b, self.c2, h // 2, w], device=x.device, dtype=x.dtype)
+        result = torch.empty(b, self.c2, h, w, device=x.device, dtype=x.dtype)
+        x1 = torch.empty(b, self.c2, h // 2, w, device=x.device, dtype=x.dtype)
+        x2 = torch.empty(b, self.c2, h // 2, w, device=x.device, dtype=x.dtype)
 
         x1[..., ::2], x1[..., 1::2] = x[..., ::2, ::2], x[..., 1::2, 1::2]
         x2[..., ::2], x2[..., 1::2] = x[..., 1::2, ::2], x[..., ::2, 1::2]

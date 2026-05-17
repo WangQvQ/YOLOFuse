@@ -152,10 +152,14 @@ class BaseDataset(Dataset):
                 self.labels[i]["cls"][:, 0] = 0
 
 
+    @staticmethod
+    def _get_ir_path(f):
+        """Derive IR image path from RGB path by replacing 'images' directory with 'imagesIR'."""
+        return f.replace(os.sep + "images" + os.sep, os.sep + "imagesIR" + os.sep, 1)
+
     def load_image(self, i, rect_mode=True):
         """Loads 1 image from dataset index 'i', returns (im, resized hw)."""
         im, f, fn = self.ims[i], self.im_files[i], self.npy_files[i]
-        ir = f.replace("images", "imagesIR")          # ↳ 对应的红外文件
         if im is None:                             # not cached in RAM
             # ---------- ① 读取 ----------
             if fn.exists():                        # *.npy 缓存
@@ -166,12 +170,16 @@ class BaseDataset(Dataset):
                     Path(fn).unlink(missing_ok=True)
                     im = cv2.imread(f)             # BGR (RGB)
             else:
-                im = cv2.imread(f)                 # BGR
+                im = cv2.imread(f)                 # BGR (RGB)
                 if self.is_dual:                   # ← 是否需要 IR
+                    ir = self._get_ir_path(f)
                     ir_im = cv2.imread(ir)
                     if ir_im is None:
-                        raise FileNotFoundError(f"IR image not found: {ir}")
-                    im = cv2.merge((ir_im, im))    # IR + RGB 通道
+                        LOGGER.warning(f"{self.prefix}WARNING ⚠️ IR image not found: {ir}, using RGB as fallback")
+                        ir_im = im.copy()
+                    if ir_im.shape[:2] != im.shape[:2]:
+                        ir_im = cv2.resize(ir_im, (im.shape[1], im.shape[0]), interpolation=cv2.INTER_LINEAR)
+                    im = cv2.merge((im, ir_im))    # RGB(0-2) + IR(3-5) 通道
 
             # ---------- ② 首次打印 ----------
             if not self._modality_logged:
@@ -228,7 +236,17 @@ class BaseDataset(Dataset):
         """Saves an image as an *.npy file for faster loading."""
         f = self.npy_files[i]
         if not f.exists():
-            np.save(f.as_posix(), cv2.imread(self.im_files[i]), allow_pickle=False)
+            im = cv2.imread(self.im_files[i])
+            if self.is_dual:
+                ir = self._get_ir_path(self.im_files[i])
+                ir_im = cv2.imread(ir)
+                if ir_im is None:
+                    LOGGER.warning(f"{self.prefix}WARNING ⚠️ IR image not found for cache: {ir}, using RGB as fallback")
+                    ir_im = im.copy()
+                if ir_im.shape[:2] != im.shape[:2]:
+                    ir_im = cv2.resize(ir_im, (im.shape[1], im.shape[0]), interpolation=cv2.INTER_LINEAR)
+                im = cv2.merge((im, ir_im))
+            np.save(f.as_posix(), im, allow_pickle=False)
 
     def check_cache_disk(self, safety_margin=0.5):
         """Check image caching requirements vs available disk space."""

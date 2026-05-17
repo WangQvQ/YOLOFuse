@@ -3,6 +3,8 @@ nc: 80 # number of classes
 ch: 6
 scales: # model compound scaling constants
   # [depth, width, max_channels]
+  # NOTE: depth is 0.50 (vs 0.33 in other fusion configs) because the dual-backbone
+  # architecture needs deeper per-branch capacity to compensate for thinner width.
   n: [0.50, 0.25, 1024]
   s: [0.50, 0.50, 1024]
   m: [0.50, 1.00, 512]
