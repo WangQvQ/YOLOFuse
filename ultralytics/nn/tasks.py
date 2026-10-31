@@ -162,6 +162,12 @@ class BaseModel(nn.Module):
         Returns:
             (torch.Tensor): The last output of the model.
         """
+        # Checkpoints trained before the channel-order fix consumed IR before RGB.
+        # Adapt them at the model boundary so all public inputs use [RGB, IR].
+        yaml = getattr(self, "yaml", {})
+        if (isinstance(x, torch.Tensor) and x.ndim == 4 and x.shape[1] == 6
+                and yaml.get("ch") == 6 and yaml.get("input_order", "ir_rgb") == "ir_rgb"):
+            x = torch.cat((x[:, 3:], x[:, :3]), dim=1)
         x = self._split_modalities(x)
         y, dt, embeddings = [], [], []  # outputs
         for m in self.model:
@@ -296,6 +302,9 @@ class BaseModel(nn.Module):
         csd = model.float().state_dict()  # checkpoint state_dict as FP32
         csd = intersect_dicts(csd, self.state_dict())  # intersect
         self.load_state_dict(csd, strict=False)  # load
+        source_yaml = getattr(model, "yaml", {})
+        if getattr(self, "yaml", {}).get("ch") == 6 and source_yaml.get("ch") == 6:
+            self.yaml["input_order"] = source_yaml.get("input_order", "ir_rgb")
         if verbose:
             LOGGER.info(f"Transferred {len(csd)}/{len(self.model.state_dict())} items from pretrained weights")
 
@@ -325,7 +334,7 @@ class DetectionModel(BaseModel):
     def __init__(self, cfg="yolo11n.yaml", ch=3, nc=None, verbose=True):  # model, input channels, number of classes
         """Initialize the YOLO detection model with the given config and parameters."""
         super().__init__()
-        self.yaml = cfg if isinstance(cfg, dict) else yaml_model_load(cfg)  # cfg dict
+        self.yaml = deepcopy(cfg) if isinstance(cfg, dict) else yaml_model_load(cfg)  # cfg dict
         if self.yaml["backbone"][0][2] == "Silence":
             LOGGER.warning(
                 "WARNING ⚠️ YOLOv9 `Silence` module is deprecated in favor of nn.Identity. "
@@ -335,6 +344,7 @@ class DetectionModel(BaseModel):
 
         # Define model
         ch = self.yaml["ch"] = self.yaml.get("ch", ch)  # input channels
+        self.yaml.setdefault("input_order", "rgb_ir")  # persisted in new checkpoints
         if nc and nc != self.yaml["nc"]:
             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
             self.yaml["nc"] = nc  # override YAML value

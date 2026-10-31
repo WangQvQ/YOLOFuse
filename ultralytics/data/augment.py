@@ -1071,10 +1071,12 @@ class RandomPerspective:
         M = T @ S @ R @ P @ C  # order of operations (right to left) is IMPORTANT
         # Affine image
         if (border[0] != 0) or (border[1] != 0) or (M != np.eye(3)).any():  # image changed
-            if self.perspective:
-                img = cv2.warpPerspective(img, M, dsize=self.size, borderValue=(114, 114, 114))
-            else:  # affine
-                img = cv2.warpAffine(img, M[:2], dsize=self.size, borderValue=(114, 114, 114))
+            def warp(part):
+                if self.perspective:
+                    return cv2.warpPerspective(part, M, dsize=self.size, borderValue=(114, 114, 114))
+                return cv2.warpAffine(part, M[:2], dsize=self.size, borderValue=(114, 114, 114))
+
+            img = np.concatenate([warp(img[..., :3]), warp(img[..., 3:])], axis=2) if img.shape[-1] == 6 else warp(img)
         return img, M, s
 
     def apply_bboxes(self, bboxes, M):
@@ -1925,7 +1927,7 @@ class Albumentations:
             - Spatial transforms update bounding boxes, while non-spatial transforms only modify the image.
             - Requires the Albumentations library to be installed.
         """
-        if self.transform is None or random.random() > self.p:
+        if self.transform is None or labels["img"].shape[-1] != 3 or random.random() > self.p:
             return labels
 
         if self.contains_spatial:
@@ -2127,7 +2129,9 @@ class Format:
         if len(img.shape) < 3:
             img = np.expand_dims(img, -1)
         img = img.transpose(2, 0, 1)
-        img = np.ascontiguousarray(img[::-1] if random.uniform(0, 1) > self.bgr else img)
+        if random.uniform(0, 1) > self.bgr:
+            img = img[[2, 1, 0, 5, 4, 3]] if img.shape[0] == 6 else img[::-1]
+        img = np.ascontiguousarray(img)
         img = torch.from_numpy(img)
         return img
 

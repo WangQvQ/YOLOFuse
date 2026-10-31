@@ -73,7 +73,8 @@ def autobatch(model, imgsz=640, fraction=0.60, batch_size=DEFAULT_CFG.batch, max
     # Profile batch sizes
     batch_sizes = [1, 2, 4, 8, 16] if t < 16 else [1, 2, 4, 8, 16, 32, 64]
     try:
-        img = [torch.empty(b, 3, imgsz, imgsz) for b in batch_sizes]
+        ch = int(getattr(model, "yaml", {}).get("ch", 3))
+        img = [torch.empty(b, ch, imgsz, imgsz) for b in batch_sizes]
         results = profile(img, model, n=1, device=device, max_num_obj=max_num_obj)
 
         # Fit a solution

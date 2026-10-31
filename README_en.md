@@ -117,6 +117,38 @@ python infer_dual.py  # Run inference with fusion
 
 > Pretrained weights available: [Quark Cloud Drive](https://pan.quark.cn/s/5e8f1c94ae5d)
 
+### RGB baseline and export
+
+For RGB-only training, select a standard single-stream model **and** `ch=3`:
+
+```python
+model = YOLO("yolov8n.yaml")
+model.train(data="ultralytics/cfg/datasets/LLVIP.yaml", ch=3)
+```
+
+Run `python export_dual.py` to export a trained fusion checkpoint. Input channels are inferred from the model YAML and stored in export metadata:
+
+```python
+model = YOLO("runs/train/easy-fuse/weights/best.pt")
+model.export(format="onnx", imgsz=640, opset=17, simplify=True)
+# model.export(format="torchscript", imgsz=640)
+exported = YOLO("runs/train/easy-fuse/weights/best.onnx", task="detect")
+results = exported.predict("/path/to/LLVIP/images/test", imgsz=640)
+```
+
+Inputs use RGB followed by IR: HWC NumPy arrays contain BGR channels within each modality; BCHW tensors contain RGB channels within each modality and are normalized to 0–1. File inputs pair `images` with `imagesIR`. Both modalities must be spatially registered; resizing alone does not register images. Synchronized video pairs must be assembled externally.
+
+Old repository checkpoints without `input_order` used the reversed modality order during training. The model now adapts them internally. For old checkpoints whose training order was already fixed manually, set `model.model.yaml["input_order"] = "rgb_ir"`. New checkpoints persist this marker. Dual disk caches use `.rgbir.npy`, separate from RGB `.npy` caches.
+
+`predict()` returns a standard list of RGB `Results`; IR previews are available on `model.predictor.ir_results`. With `save=True`, dual images are saved with `_rgb` and `_ir` suffixes.
+
+All seven fusion configurations are covered by TorchScript and static/dynamic ONNX round-trip tests. Six-channel CoreML ImageType export is rejected explicitly. TensorRT, OpenVINO, TensorFlow and NCNN have not been validated in this environment.
+
+```bash
+pip install onnx onnxruntime onnxslim
+python -m pytest tests/test_fuse_models.py tests/test_fuse_pipeline.py -q
+```
+
 ---
 
 ## 📂 Dataset Structure

@@ -133,6 +133,7 @@ class AutoBackend(nn.Module):
         nhwc = coreml or saved_model or pb or tflite or edgetpu or rknn  # BHWC formats (vs torch BCWH)
         stride = 32  # default stride
         end2end = False  # default end2end
+        ch = 3  # input channels, overridden by model YAML or export metadata
         model, metadata, task = None, None, None
 
         # Set device
@@ -222,6 +223,9 @@ class AutoBackend(nn.Module):
 
             output_names = [x.name for x in session.get_outputs()]
             metadata = session.get_modelmeta().custom_metadata_map
+            input_channels = session.get_inputs()[0].shape[1]
+            if isinstance(input_channels, int):
+                ch = input_channels
             dynamic = isinstance(session.get_outputs()[0].shape[0], str)
             fp16 = True if "float16" in session.get_inputs()[0].type else False
             if not dynamic:
@@ -500,15 +504,19 @@ class AutoBackend(nn.Module):
                 f"See https://docs.ultralytics.com/modes/predict for help."
             )
 
+        if pt:
+            ch = int(getattr(model, "yaml", {}).get("ch", 3))
+
         # Load external metadata YAML
         if isinstance(metadata, (str, Path)) and Path(metadata).exists():
             metadata = yaml_load(metadata)
         if metadata and isinstance(metadata, dict):
             for k, v in metadata.items():
-                if k in {"stride", "batch"}:
+                if k in {"stride", "batch", "channels"}:
                     metadata[k] = int(v)
                 elif k in {"imgsz", "names", "kpt_shape", "args"} and isinstance(v, str):
                     metadata[k] = eval(v)
+            ch = int(metadata.get("channels", ch))
             stride = metadata["stride"]
             task = metadata["task"]
             batch = metadata["batch"]

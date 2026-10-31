@@ -85,7 +85,12 @@ class DetectionTrainer(BaseTrainer):
 
     def get_model(self, cfg=None, weights=None, verbose=True):
         """Return a YOLO detection model."""
-        model = DetectionModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
+        model = DetectionModel(cfg, ch=self.args.ch, nc=self.data["nc"], verbose=verbose and RANK == -1)
+        if model.yaml["ch"] != self.args.ch:
+            raise ValueError(
+                f"Model requires ch={model.yaml['ch']}, but training uses ch={self.args.ch}. "
+                "Use ch=6 for RGB+IR fusion, or a standard model such as yolov8n.yaml with ch=3 for RGB only."
+            )
         if weights:
             model.load(weights)
         return model

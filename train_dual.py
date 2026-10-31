@@ -1,10 +1,10 @@
 from ultralytics import YOLO
 
 if __name__ == "__main__":
-    model = YOLO("ultralytics/cfg/models/fuse/easy-fuse.yaml")
+    model = YOLO("ultralytics/cfg/models/fuse/Easy-level-Feature-Fusion.yaml")
     model.train(
         data="ultralytics/cfg/datasets/LLVIP.yaml",
-        ch=6, # 多模态时设置为 6 ，单模态时设置为 3
+        ch=6, # 双模态融合；RGB 单模态请同时换成 yolov8n.yaml 并设置 ch=3
         imgsz=640,
         epochs=100,
         batch=64,

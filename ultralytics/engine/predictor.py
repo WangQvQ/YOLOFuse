@@ -126,10 +126,18 @@ class BasePredictor:
         not_tensor = not isinstance(im, torch.Tensor)
         if not_tensor:
             im = np.stack(self.pre_transform(im))
-            im = im[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW, (n, 3, h, w)
+            # Convert BGR within each modality, preserving [RGB, IR] order.
+            if im.shape[-1] == 6:
+                im = im[..., [2, 1, 0, 5, 4, 3]]
+            else:
+                im = im[..., ::-1]
+            im = im.transpose((0, 3, 1, 2))
             im = np.ascontiguousarray(im)  # contiguous
             im = torch.from_numpy(im)
 
+        if im.shape[1] != self.model.ch:
+            raise ValueError(f"Model expects {self.model.ch} input channels, received {im.shape[1]}. "
+                             "For RGB+IR use paired images/imagesIR files or a 6-channel array/tensor.")
         im = im.to(self.device)
         im = im.half() if self.model.fp16 else im.float()  # uint8 to fp16/32
         if not_tensor:
@@ -208,6 +216,7 @@ class BasePredictor:
             batch=self.args.batch,
             vid_stride=self.args.vid_stride,
             buffer=self.args.stream_buffer,
+            ch=self.model.ch,
         )
         self.source_type = self.dataset.source_type
         if not getattr(self, "stream", True) and (
@@ -269,50 +278,28 @@ class BasePredictor:
 
                 # Postprocess
                 with profilers[2]:
-                    # self.results = self.postprocess(preds, im, im0s)
-                    if self.args.ch >= 4:  # RGB or RGB+IR
-                        self.results, self.ir_results = self.postprocess(preds, im, im0s)
-                    else:
-                        self.results = self.postprocess(preds, im, im0s)
+                    self.ir_results = None
+                    self.results = self.postprocess(preds, im, im0s)
                 self.run_callbacks("on_predict_postprocess_end")
 
-                # Visualize, save, write results
                 n = len(im0s)
                 for i in range(n):
                     self.seen += 1
-                    # self.results[i].speed = {
-                    #    "preprocess": profilers[0].dt * 1e3 / n,
-                    #    "inference": profilers[1].dt * 1e3 / n,
-                    #    "postprocess": profilers[2].dt * 1e3 / n,
-                    # }
-                    if self.args.ch >= 4:  # RGB or RGB+IR
-                        self.results[i].speed = {
-                            "preprocess": profilers[0].dt * 1e3 / n,
-                            "inference": profilers[1].dt * 1e3 / n,
-                            "postprocess": profilers[2].dt * 1e3 / n,
-                        }
-                        self.ir_results[i].speed = {
-                            "preprocess": profilers[0].dt * 1e3 / n,
-                            "inference": profilers[1].dt * 1e3 / n,
-                            "postprocess": profilers[2].dt * 1e3 / n,
-                        }
-                    else:
-                        self.results[i].speed = {
-                            "preprocess": profilers[0].dt * 1e3 / n,
-                            "inference": profilers[1].dt * 1e3 / n,
-                            "postprocess": profilers[2].dt * 1e3 / n,
-                        }
-                    if self.args.verbose or self.args.save or self.args.save_txt or self.args.show:
-                        # s[i] += self.write_results(i, Path(paths[i]), im, s)
-                        s[i] += self.write_results(
-                            i, Path(paths[i][:-4] + "_rgb" + paths[i][-4:]), im[:, :3], s, self.results
-                        )
-
-                    if self.ir_results is not None:  # for IR results
-                        if self.args.verbose or self.args.save or self.args.save_txt or self.args.show:
-                            s[i] += self.write_results(
-                                i, Path(paths[i][:-4] + "_ir" + paths[i][-4:]), im[:, 3:], s, self.ir_results
-                            )
+                    self.results[i].speed = {
+                        "preprocess": profilers[0].dt * 1e3 / n,
+                        "inference": profilers[1].dt * 1e3 / n,
+                        "postprocess": profilers[2].dt * 1e3 / n,
+                    }
+                    write = self.args.verbose or self.args.save or self.args.save_txt or self.args.show
+                    path = Path(paths[i])
+                    if write:
+                        rgb_path = path.with_name(path.stem + "_rgb" + path.suffix) if self.ir_results else path
+                        s[i] += self.write_results(i, rgb_path, im[:, :3], s)
+                    if self.ir_results:
+                        self.ir_results[i].speed = self.results[i].speed.copy()
+                        if write:
+                            ir_path = path.with_name(path.stem + "_ir" + path.suffix)
+                            s[i] += self.write_results(i, ir_path, im[:, 3:], s, self.ir_results)
 
                 # Print batch results
                 if self.args.verbose:
@@ -352,12 +339,13 @@ class BasePredictor:
             verbose=verbose,
         )
 
+        self.args.ch = self.model.ch  # architecture/export metadata determines input channels
         self.device = self.model.device  # update device
         self.args.half = self.model.fp16  # update half
         self.model.eval()
 
     # def write_results(self, i, p, im, s):
-    def write_results(self, i, p, im, s, results):
+    def write_results(self, i, p, im, s, results=None):
         """Write inference results to a file or directory."""
         string = ""  # print string
         if len(im.shape) == 3:
@@ -372,7 +360,7 @@ class BasePredictor:
         self.txt_path = self.save_dir / "labels" / (p.stem + ("" if self.dataset.mode == "image" else f"_{frame}"))
         string += "{:g}x{:g} ".format(*im.shape[2:])
         # result = self.results[i]
-        result = results[i]
+        result = (self.results if results is None else results)[i]
         result.save_dir = self.save_dir.__str__()  # used in other locations
         string += f"{result.verbose()}{result.speed['inference']:.1f}ms"
 

@@ -121,6 +121,47 @@ python train_dual.py  # 启动双流训练
 python infer_dual.py  # 执行融合推理
 ```
 
+### 单模态可见光训练
+
+单模态可见光仍为 RGB 三通道。需要同时选择标准单流模型和 `ch=3`；融合 YAML 不能仅靠修改 `ch` 切换成单流。
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolov8n.yaml")
+model.train(data="ultralytics/cfg/datasets/LLVIP.yaml", ch=3)
+```
+
+### 模型导出
+
+```bash
+python export_dual.py
+```
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("runs/train/easy-fuse/weights/best.pt")
+model.export(format="onnx", imgsz=640, opset=17, simplify=True)
+# model.export(format="torchscript", imgsz=640)
+
+exported = YOLO("runs/train/easy-fuse/weights/best.onnx", task="detect")
+results = exported.predict(source="/path/to/LLVIP/images/test", imgsz=640)
+```
+
+- 导出输入通道由模型结构决定，保存在导出元数据中；推理和独立验证会自动读取，无需再传 `ch=6`。
+- 输入文件按 `images` → `imagesIR` 目录配对；数组为 HWC `[RGB的BGR三通道, IR的BGR三通道]`，浮点张量为 BCHW `[RGB, IR]`，归一化到 0–1。空间增强对两个模态同步应用。
+- 新训练模型与推理统一采用 `[RGB, IR]` 顺序；原仓库训练流程曾整体反转六个通道。旧 `.pt` 权重缺少 `input_order` 标记时会在模型内部自动交换模态，保持原有权重语义。自行修正过顺序的旧权重请显式设置 `model.model.yaml["input_order"] = "rgb_ir"`。
+- `predict()` 返回标准 `list[Results]`，对应可见光图片；红外预览保存在 `model.predictor.ir_results`，`save=True` 时分别保存 `_rgb` / `_ir` 图片。
+- 双模态磁盘缓存使用 `.rgbir.npy`，与单模态 `.npy` 分开。RGB/IR 图像必须已配准，自动缩放只解决尺寸差异，不会完成空间配准。
+- 验证覆盖七种融合模型的 TorchScript、静态/动态 ONNX。CoreML 当前使用 RGB ImageType，六通道会明确报错；TensorRT、OpenVINO、TensorFlow、NCNN 等后端尚未在本次环境实测，不能据此认为所有格式均可用。双模态视频流需要外部同步组装六通道帧，不会自动配对视频。
+
+回归测试（ONNX 相关测试需要 `pip install onnx onnxruntime onnxslim`）：
+
+```bash
+python -m pytest tests/test_fuse_models.py tests/test_fuse_pipeline.py -q
+```
+
 > 预训练权重下载：
 > 链接：[https://pan.quark.cn/s/ec13c6e17b8d]([https://](https://pan.quark.cn/s/ec13c6e17b8d))
 > 提取码：HETx

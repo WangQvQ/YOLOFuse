@@ -133,6 +133,7 @@ class BaseValidator:
                 fp16=self.args.half,
             )
             # self.model = model
+            self.args.ch = model.ch
             self.device = model.device  # update device
             self.args.half = model.fp16  # update half
             stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine

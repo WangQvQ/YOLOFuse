@@ -91,7 +91,7 @@ class BaseDataset(Dataset):
 
         # Cache images (options are cache = True, False, None, "ram", "disk")
         self.ims, self.im_hw0, self.im_hw = [None] * self.ni, [None] * self.ni, [None] * self.ni
-        self.npy_files = [Path(f).with_suffix(".npy") for f in self.im_files]
+        self.npy_files = [Path(f).with_suffix(".rgbir.npy" if self.is_dual else ".npy") for f in self.im_files]
         self.cache = cache.lower() if isinstance(cache, str) else "ram" if cache is True else None
         if self.cache == "ram" and self.check_cache_ram():
             if hyp.deterministic:
@@ -155,31 +155,43 @@ class BaseDataset(Dataset):
     @staticmethod
     def _get_ir_path(f):
         """Derive IR image path from RGB path by replacing 'images' directory with 'imagesIR'."""
-        return f.replace(os.sep + "images" + os.sep, os.sep + "imagesIR" + os.sep, 1)
+        parts = list(Path(f).parts)
+        if "images" in parts:
+            parts[parts.index("images")] = "imagesIR"
+            return str(Path(*parts))
+        return str(f)
+
+    @classmethod
+    def _load_image_pair(cls, path, rgb):
+        """Load BGR RGB + BGR IR, with the same fallback and resize in every entry point."""
+        ir_path = cls._get_ir_path(str(path))
+        ir = cv2.imread(ir_path) if ir_path != str(path) else None
+        if ir is None:
+            LOGGER.warning(f"WARNING ⚠️ IR image not found: {ir_path}, using RGB as fallback")
+            ir = rgb.copy()
+        if ir.shape[:2] != rgb.shape[:2]:
+            ir = cv2.resize(ir, (rgb.shape[1], rgb.shape[0]), interpolation=cv2.INTER_LINEAR)
+        return np.concatenate((rgb, ir), axis=2)
 
     def load_image(self, i, rect_mode=True):
         """Loads 1 image from dataset index 'i', returns (im, resized hw)."""
         im, f, fn = self.ims[i], self.im_files[i], self.npy_files[i]
         if im is None:                             # not cached in RAM
-            # ---------- ① 读取 ----------
-            if fn.exists():                        # *.npy 缓存
+            if fn.exists():
                 try:
-                    im = np.load(fn)
+                    im = np.load(fn, allow_pickle=False)
+                    expected_ch = 6 if self.is_dual else 3
+                    if im.ndim != 3 or im.shape[2] != expected_ch:
+                        im = None  # stale cache from a different modality
                 except Exception as e:
                     LOGGER.warning(f"{self.prefix}WARNING ⚠️ Removing corrupt *.npy image file {fn} due to: {e}")
-                    Path(fn).unlink(missing_ok=True)
-                    im = cv2.imread(f)             # BGR (RGB)
-            else:
-                im = cv2.imread(f)                 # BGR (RGB)
-                if self.is_dual:                   # ← 是否需要 IR
-                    ir = self._get_ir_path(f)
-                    ir_im = cv2.imread(ir)
-                    if ir_im is None:
-                        LOGGER.warning(f"{self.prefix}WARNING ⚠️ IR image not found: {ir}, using RGB as fallback")
-                        ir_im = im.copy()
-                    if ir_im.shape[:2] != im.shape[:2]:
-                        ir_im = cv2.resize(ir_im, (im.shape[1], im.shape[0]), interpolation=cv2.INTER_LINEAR)
-                    im = cv2.merge((im, ir_im))    # RGB(0-2) + IR(3-5) 通道
+                    fn.unlink(missing_ok=True)
+            if im is None:
+                im = cv2.imread(f)
+                if im is None:
+                    raise FileNotFoundError(f"Image not found: {f}")
+                if self.is_dual:
+                    im = self._load_image_pair(f, im)
 
             # ---------- ② 首次打印 ----------
             if not self._modality_logged:
@@ -233,20 +245,21 @@ class BaseDataset(Dataset):
             pbar.close()
 
     def cache_images_to_disk(self, i):
-        """Saves an image as an *.npy file for faster loading."""
+        """Save a modality-specific cache, replacing legacy or incompatible caches."""
         f = self.npy_files[i]
-        if not f.exists():
-            im = cv2.imread(self.im_files[i])
-            if self.is_dual:
-                ir = self._get_ir_path(self.im_files[i])
-                ir_im = cv2.imread(ir)
-                if ir_im is None:
-                    LOGGER.warning(f"{self.prefix}WARNING ⚠️ IR image not found for cache: {ir}, using RGB as fallback")
-                    ir_im = im.copy()
-                if ir_im.shape[:2] != im.shape[:2]:
-                    ir_im = cv2.resize(ir_im, (im.shape[1], im.shape[0]), interpolation=cv2.INTER_LINEAR)
-                im = cv2.merge((im, ir_im))
-            np.save(f.as_posix(), im, allow_pickle=False)
+        if f.exists():
+            try:
+                cached = np.load(f, allow_pickle=False, mmap_mode="r")
+                if cached.ndim == 3 and cached.shape[2] == (6 if self.is_dual else 3):
+                    return
+            except Exception:
+                pass
+        im = cv2.imread(self.im_files[i])
+        if im is None:
+            raise FileNotFoundError(f"Image not found: {self.im_files[i]}")
+        if self.is_dual:
+            im = self._load_image_pair(self.im_files[i], im)
+        np.save(f.as_posix(), im, allow_pickle=False)
 
     def check_cache_disk(self, safety_margin=0.5):
         """Check image caching requirements vs available disk space."""
@@ -259,7 +272,7 @@ class BaseDataset(Dataset):
             im = cv2.imread(im_file)
             if im is None:
                 continue
-            b += im.nbytes
+            b += im.nbytes * (2 if self.is_dual else 1)
             if not os.access(Path(im_file).parent, os.W_OK):
                 self.cache = None
                 LOGGER.info(f"{self.prefix}Skipping caching images to disk, directory not writeable ⚠️")
@@ -285,7 +298,7 @@ class BaseDataset(Dataset):
             if im is None:
                 continue
             ratio = self.imgsz / max(im.shape[0], im.shape[1])  # max(h, w)  # ratio
-            b += im.nbytes * ratio**2
+            b += im.nbytes * ratio**2 * (2 if self.is_dual else 1)
         mem_required = b * self.ni / n * (1 + safety_margin)  # GB required to cache dataset into RAM
         mem = psutil.virtual_memory()
         if mem_required > mem.available:

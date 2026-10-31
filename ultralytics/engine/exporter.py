@@ -309,7 +309,10 @@ class Exporter:
             )
 
         # Input
-        im = torch.zeros(self.args.batch, 3, *self.imgsz).to(self.device)
+        self.args.ch = int(getattr(model, "yaml", {}).get("ch", 3))
+        if coreml and self.args.ch != 3:
+            raise ValueError("CoreML ImageType export requires 3 channels; use ONNX or TorchScript for RGB+IR models.")
+        im = torch.zeros(self.args.batch, self.args.ch, *self.imgsz).to(self.device)
         file = Path(
             getattr(model, "pt_path", None) or getattr(model, "yaml_file", None) or model.yaml.get("yaml_file", "")
         )
@@ -382,6 +385,8 @@ class Exporter:
             "stride": int(max(model.stride)),
             "task": model.task,
             "batch": self.args.batch,
+            "channels": self.args.ch,
+            "input_order": "rgb_ir",
             "imgsz": self.imgsz,
             "names": model.names,
             "args": {k: v for k, v in self.args if k in fmt_keys},
@@ -468,6 +473,7 @@ class Exporter:
             imgsz=self.imgsz[0],
             augment=False,
             batch_size=batch,
+            hyp=self.args,
         )
         n = len(dataset)
         if n < self.args.batch:
@@ -538,6 +544,7 @@ class Exporter:
             input_names=["images"],
             output_names=output_names,
             dynamic_axes=dynamic or None,
+            **({"dynamo": False} if check_version(torch.__version__, "2.4.0") else {}),
         )
 
         # Checks
@@ -727,7 +734,7 @@ class Exporter:
             *pnnx_args,
             f"fp16={int(self.args.half)}",
             f"device={self.device.type}",
-            f'inputshape="{[self.args.batch, 3, *self.imgsz]}"',
+            f'inputshape="{list(self.im.shape)}"',
         ]
         f.mkdir(exist_ok=True)  # make ncnn_model directory
         LOGGER.info(f"{prefix} running '{' '.join(cmd)}'")
